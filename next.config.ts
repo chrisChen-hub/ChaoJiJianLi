@@ -6,6 +6,9 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 const nextConfig: NextConfig = {
   output: 'standalone',
   serverExternalPackages: ['better-sqlite3', 'puppeteer-core', '@sparticuz/chromium-min'],
+  turbopack: {
+    root: process.cwd(),
+  },
 };
 
 export default withNextIntl(nextConfig);

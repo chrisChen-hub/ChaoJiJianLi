@@ -108,3 +108,33 @@ export {
   interviewMessages,
   interviewReports,
 } from './schema-interview';
+
+// ===== Subscription / Payment =====
+export const subscriptions = sqliteTable('subscriptions', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id),
+  plan: text('plan', { enum: ['free', 'pro', 'lifetime'] }).notNull().default('free'),
+  status: text('status', { enum: ['active', 'canceled', 'expired', 'trialing'] }).notNull().default('active'),
+  currentPeriodStart: integer('current_period_start', { mode: 'timestamp' }),
+  currentPeriodEnd: integer('current_period_end', { mode: 'timestamp' }),
+  cancelAtPeriodEnd: integer('cancel_at_period_end', { mode: 'boolean' }).notNull().default(false),
+  aiGenerationsUsed: integer('ai_generations_used').notNull().default(0),
+  aiGenerationsLimit: integer('ai_generations_limit').notNull().default(10),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+});
+
+export const payments = sqliteTable('payments', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id),
+  subscriptionId: text('subscription_id').references(() => subscriptions.id),
+  zpayTradeNo: text('zpay_trade_no'),
+  amount: integer('amount').notNull(),
+  currency: text('currency').notNull().default('cny'),
+  status: text('status', { enum: ['pending', 'succeeded', 'failed', 'refunded'] }).notNull().default('pending'),
+  plan: text('plan').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+});
+
+
+

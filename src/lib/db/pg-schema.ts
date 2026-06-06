@@ -3,7 +3,7 @@
  * Used ONLY by drizzle-kit for PG migration generation.
  * Runtime code still imports table objects from schema.ts.
  */
-import { pgTable, text, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, timestamp, boolean } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 const epochNow = sql`extract(epoch from now())::integer`;
@@ -157,3 +157,31 @@ export const interviewReports = pgTable('interview_reports', {
   improvementPlan: text('improvement_plan').notNull(),
   createdAt: integer('created_at').notNull().default(epochNow),
 });
+
+// ===== Subscription / Payment =====
+export const subscriptions = pgTable('subscriptions', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id),
+  plan: text('plan', { enum: ['free', 'pro', 'lifetime'] }).notNull().default('free'),
+  status: text('status', { enum: ['active', 'canceled', 'expired', 'trialing'] }).notNull().default('active'),
+  currentPeriodStart: timestamp('current_period_start'),
+  currentPeriodEnd: timestamp('current_period_end'),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+  aiGenerationsUsed: integer('ai_generations_used').notNull().default(0),
+  aiGenerationsLimit: integer('ai_generations_limit').notNull().default(10),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const payments = pgTable('payments', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id),
+  subscriptionId: text('subscription_id').references(() => subscriptions.id),
+  zpayTradeNo: text('zpay_trade_no'),
+  amount: integer('amount').notNull(),
+  currency: text('currency').notNull().default('cny'),
+  status: text('status', { enum: ['pending', 'succeeded', 'failed', 'refunded'] }).notNull().default('pending'),
+  plan: text('plan').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
